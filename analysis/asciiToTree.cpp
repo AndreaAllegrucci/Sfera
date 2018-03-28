@@ -26,6 +26,8 @@ int main( int argc, char* argv[] ) {
     fileName.erase( 0, 8 );
   }
 
+  //prova
+  std::cout << "prova";
 
   std::ifstream fs(Form("../data/%s", fileName.c_str()));
   if( !fs.good() ) {
