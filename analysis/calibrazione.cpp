@@ -65,6 +65,7 @@ int main( int argc, char* argv[]) {
   system( Form("mkdir -p %s", plotsDir.c_str()) );
   
   std::string comando = Form(" for (( i = %d ; i < %d ; i += %d )) ; do ./measToTree Ch_%d_V_${i}_Measurements_Only_%d_%d_2018.dat; done", vMin, vMin+step*n, step, ch, month, day);
+  //std::string comando = Form(" for (( i = %d ; i < %d ; i += %d )) ; do ./measToTree V_${i}_Measurements_Only_%d_%d_2018.dat; done", vMin, vMin+step*n, step, month, day);
   system(Form("%s", comando.c_str() ));
   
   for(int v=vMin; v<=vMax; v+=step){
@@ -75,6 +76,7 @@ int main( int argc, char* argv[]) {
       where = gDirectory;
       histo = new TH1F("charge", "charge", nbin, Min, Max);
       f = new TFile(Form("Ch_%d_V_%d_Measurements_Only_%d_%d_2018.root", ch, v, month, day));
+      //f = new TFile(Form("V_%d_Measurements_Only_%d_%d_2018.root", v, month, day));
       tree = (TTree*)f->Get("tree");
       where->cd();
       tree->Project("charge",Form("vcharge[%d]", ch));
@@ -105,6 +107,8 @@ int main( int argc, char* argv[]) {
     pv->AddText(Form("stdev: %f +/- %f", fitg->GetParameter(2),fitg->GetParError(2)));
     pv->Draw();
     c->SaveAs(Form("plots/calibrazioni/canale_%d/spettri/Spettro_Ch_%d_V_%d.pdf", ch, ch, v));
+    c->SaveAs(Form("plots/calibrazioni/canale_%d/spettri/Spettro_Ch_%d_V_%d.root", ch, ch, v));
+
     x[i]=v;
     y[i]=log((fitg->GetParameter(1)));
     i++;
@@ -141,6 +145,7 @@ int main( int argc, char* argv[]) {
   gr->Draw("AP");
   pvl.Draw();
   c->SaveAs(Form("plots/calibrazioni/canale_%d/calibrazione_Ch_%d.pdf",ch, ch));
+  c->SaveAs(Form("plots/calibrazioni/canale_%d/calibrazione_Ch_%d.root",ch, ch));
  
   return 0;
 }
