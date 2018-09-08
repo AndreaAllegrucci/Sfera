@@ -31,6 +31,8 @@ int main( int argc, char* argv[] ) {
     fileName.erase( 0, 8 );
   }
 
+  //prova
+  std::cout << "prova";
 
   std::ifstream fs(Form("/run/media/andrea/Elements/%s", complete_fileName.c_str()));  //ifstream 1)crea l'oggetto fs della classe ifstrem, in modo da poter usare il metodo good (ritorna 1 se esiste il file), e 2)apre il file se esiste
   if( !fs.good() ) {
