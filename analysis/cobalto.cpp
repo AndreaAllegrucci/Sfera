@@ -1,4 +1,3 @@
- #include <iostream>
 #include <stdlib.h>
 #include <stdio.h>
 #include <fstream>
@@ -9,6 +8,7 @@
 #include "TCanvas.h"
 #include "TSpectrum.h"
 #include "TF1.h"
+
 #include "TGaxis.h"
 
 #define MIN 50
@@ -20,17 +20,21 @@
 
 int main(int argc, char *argv[]) {
 
+
+=======
   if (argc != 2) {
     std::cerr << "USAGE: ./cobalto [rootfileName]" << std::endl;
+
     exit(1);
   }
   
-  std::string fileName(argv[1]);
-	      
+  std::string fileName(argv[1])   
   TFile *file = TFile::Open(fileName.c_str());
   TTree *tree = (TTree *) file->Get("tree");
   TH1D *hcharge = new TH1D("hcharge", "hcharge", NBIN, MIN, MAX);
 
+
+=======
   tree->Project("hcharge", "vcharge");
 
   std::cerr << "-> Opened file " << fileName.c_str() << std::endl;
@@ -38,16 +42,21 @@ int main(int argc, char *argv[]) {
   
   TCanvas *c1 = new TCanvas("c1", "c1", 600, 600);
   c1->cd();
-
+                                                //cerca 3 picchi
+=======
   TSpectrum *s = new TSpectrum(3);
   //std::cout<<s->Search(hcharge, 2, "", 0.1)<<std::endl;
   if (s->Search(hcharge, 2, "", 0.1) != 3) {
+
     std::cerr << "Error: Number of peaks not as expected (1). Exiting" << std::endl;
     exit(11);
   }
   
+
+=======
   double maxpos0 = s->GetPositionX()[0];
   double maxpos1 = s->GetPositionX()[1];
+
   double maxpos2 = s->GetPositionX()[2];
   double comptonpos1;
   double comptonpos2;
@@ -56,6 +65,8 @@ int main(int argc, char *argv[]) {
   leftmax = hcharge->GetMaximum();
   comptonpos1 = maxpos1   * (1 - 1 / (1 + 2 * 1170. / 511));
   comptonpos2 = maxpos2   * (1 - 1 / (1 + 2 * 1330. / 511));
+                                               // Non piu grande del massimo compton
+=======
 
   TF1 *all = new TF1("all", "[0] * ([1] * exp(-x * [2]) + (1 - [1]) * exp(-x * [3])) + [4] * exp(-(x - [5]) * (x - [5]) / (2 * [6] * [6]))+[7] * exp(-(x - [8]) * (x - [8]) / (2 * [9] * [9])) + [10] / (exp((x - [11]) * [12]) + 1) + [13] / (exp((x - [14]) * [15]) + 1)", maxpos0+100., maxpos2+300.); 
 
@@ -70,6 +81,7 @@ int main(int argc, char *argv[]) {
   all->SetParLimits(8, .9 * maxpos2, 1.1 * maxpos2);                          // Scala energetica del compton +o- 10%
   all->SetParLimits(9, 20., 150.);
   all->SetParLimits(10, .1*leftmax, .3 * leftmax);                                                 // Non piu grande del massimo compton
+
   all->SetParLimits(11, .9 * comptonpos1, 1.1 * comptonpos1);                          // Scala energetica del compton +o- 10%
   all->SetParLimits(12, .01, 2);  // Copiato da Gruppo 2017
   all->SetParLimits(13, 0, .25 * leftmax);                              // Finestra piu o meno ragionevole
@@ -85,10 +97,13 @@ int main(int argc, char *argv[]) {
   all->SetParameter(3, 4 / comptonpos1);          // Scala energetica doppio esponenziale come compton
   all->SetParameter(4, .3*leftmax);  // Normalizzazione da fit gaussiano precedente
   all->SetParameter(5, maxpos1);  // Media da fit gaussiano precedente
+
+=======
   all->SetParameter(6, 50.);  // Sigma da fit gaussiano precedente
   all->SetParameter(7, .2*leftmax);             // Normalizzazione compton da scala minore di doppio esponenziale
   all->SetParameter(8, maxpos2);              // Scala energetica compton
   all->SetParameter(9, 50.);    // Da Gruppo 2017
+
   all->SetParameter(10, leftmax / 5.);             // Normalizzazione compton da scala minore di doppio esponenziale
   all->SetParameter(11, comptonpos1);              // Scala energetica compton
   all->SetParameter(12, .1);    // Da Gruppo 2017
@@ -146,13 +161,18 @@ int main(int argc, char *argv[]) {
   FDM->Draw("same");
   //FDF->Draw("same");
 
+
+=======
   TGaxis *axis = new TGaxis(MIN, -100, MAX , -100, MIN , (double)MAX / 1.449, 510, "" ); //NB costanti di calibrazione canale 5 : Q = E * 1.449
   axis->Draw("same");
   c1->SaveAs("totalcobalto.root");
+
   #endif
 
   std::cout<<all->GetChisquare()<<std::endl;
   std::cout<<all->GetNDF()<<std::endl;
+
+=======
 
   std::ofstream f;
   f.open("sorgenti.dat", std::ios_base::app);
@@ -162,6 +182,7 @@ int main(int argc, char *argv[]) {
   
   f.close();
   
+
   
   return 0;
 }
