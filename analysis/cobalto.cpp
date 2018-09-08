@@ -1,5 +1,5 @@
- #include <iostream>
 #include <stdlib.h>
+#include <stdio.h>
 #include <fstream>
 
 #include "TFile.h"
@@ -8,13 +8,11 @@
 #include "TCanvas.h"
 #include "TSpectrum.h"
 #include "TF1.h"
-#include "TH1.h"
-#include "TGraph.h"
-#include "TMath.h"
-#include "TPaveText.h"
 
-#define MIN 0
-#define MAX 800
+#include "TGaxis.h"
+
+#define MIN 50
+#define MAX 2500
 #define NBIN 100
 
 #define GRAPH
@@ -22,44 +20,43 @@
 
 int main(int argc, char *argv[]) {
 
-  if (argc != 3) {
-    std::cerr << "USAGE: ./cobalto [rootfileName] [canale]" << std::endl;
+
+=======
+  if (argc != 2) {
+    std::cerr << "USAGE: ./cobalto [rootfileName]" << std::endl;
+
     exit(1);
   }
   
-  std::string fileName(argv[1]);
-  int ch(atoi(argv[2]));
-	      
+  std::string fileName(argv[1])   
   TFile *file = TFile::Open(fileName.c_str());
   TTree *tree = (TTree *) file->Get("tree");
   TH1D *hcharge = new TH1D("hcharge", "hcharge", NBIN, MIN, MAX);
+
+
+=======
+  tree->Project("hcharge", "vcharge");
 
   std::cerr << "-> Opened file " << fileName.c_str() << std::endl;
   std::cerr << "-> Will find the photopeak and fit." << std::endl;
   
   TCanvas *c1 = new TCanvas("c1", "c1", 600, 600);
   c1->cd();
-
-  float vcharge[128];
-
-  tree->SetBranchAddress("vcharge", vcharge);
-
-  int nentries = tree->GetEntries();
-
-  for (unsigned ientry = 0 ; ientry < nentries ; ientry++) {
-    tree->GetEntry(ientry);
-    hcharge->Fill(fabs(vcharge[ch]));
-  }
-
+                                                //cerca 3 picchi
+=======
   TSpectrum *s = new TSpectrum(3);
   //std::cout<<s->Search(hcharge, 2, "", 0.1)<<std::endl;
-  if (s->Search(hcharge, 2, "", 0.1) != 3) {                                                //cerca 3 picchi
+  if (s->Search(hcharge, 2, "", 0.1) != 3) {
+
     std::cerr << "Error: Number of peaks not as expected (1). Exiting" << std::endl;
     exit(11);
   }
   
-  double maxpos0 = s->GetPositionX()[1];
-  double maxpos1 = s->GetPositionX()[0];
+
+=======
+  double maxpos0 = s->GetPositionX()[0];
+  double maxpos1 = s->GetPositionX()[1];
+
   double maxpos2 = s->GetPositionX()[2];
   double comptonpos1;
   double comptonpos2;
@@ -68,20 +65,23 @@ int main(int argc, char *argv[]) {
   leftmax = hcharge->GetMaximum();
   comptonpos1 = maxpos1   * (1 - 1 / (1 + 2 * 1170. / 511));
   comptonpos2 = maxpos2   * (1 - 1 / (1 + 2 * 1330. / 511));
-  std::cout<<maxpos0<<"   "<<maxpos1<<"    "<<maxpos2<<std::endl;
-  TF1 *all = new TF1("all", "[0] * ([1] * exp(-x * [2]) + (1 - [1]) * exp(-x * [3])) + [4] * exp(-(x - [5]) * (x - [5]) / (2 * [6] * [6]))+[7] * exp(-(x - [8]) * (x - [8]) / (2 * [9] * [9])) + [10] / (exp((x - [11]) * [12]) + 1) + [13] / (exp((x - [14]) * [15]) + 1)", maxpos0+10., maxpos2+100.); 
+                                               // Non piu grande del massimo compton
+=======
+
+  TF1 *all = new TF1("all", "[0] * ([1] * exp(-x * [2]) + (1 - [1]) * exp(-x * [3])) + [4] * exp(-(x - [5]) * (x - [5]) / (2 * [6] * [6]))+[7] * exp(-(x - [8]) * (x - [8]) / (2 * [9] * [9])) + [10] / (exp((x - [11]) * [12]) + 1) + [13] / (exp((x - [14]) * [15]) + 1)", maxpos0+100., maxpos2+300.); 
 
   all->SetParLimits(0, .5 * leftmax, 10 * leftmax);                                 // Finestra di tre ordini di grandezza intorno al valore atteso
-  all->SetParLimits(1, 0.01, 0.99);                                                 // Peso di ciascun esponenziale maggiore di 0.01
+  all->SetParLimits(1, 0.001, 0.99);                                                 // Peso di ciascun esponenziale maggiore di 0.01
   all->SetParLimits(2, .01 / comptonpos1, 6 / comptonpos1);                           // Finestra di prova intorno al valore atteso (da Gruppo 2017)
   all->SetParLimits(3, 4 / comptonpos1, 10 / comptonpos1);                           // Finestra di prova intorno al valore atteso (da Gruppo 2017)
-  all->SetParLimits(4, .1*leftmax, 1.5*leftmax);  // Risultati del primo fit possono cambiare del 10%
+  all->SetParLimits(4, .1*leftmax, .5*leftmax);  // Risultati del primo fit possono cambiare del 10%
   all->SetParLimits(5, .9 * maxpos1, 1.1 * maxpos1);  // Risultati del primo fit possono cambiare del 10%
-  all->SetParLimits(6, 5., 40.);  // Risultati del primo fit possono cambiare del 10%
+  all->SetParLimits(6, 20., 150.);  // Risultati del primo fit possono cambiare del 10%
   all->SetParLimits(7, .1*leftmax, .8*leftmax);                                                 // Non piu grande del massimo compton
   all->SetParLimits(8, .9 * maxpos2, 1.1 * maxpos2);                          // Scala energetica del compton +o- 10%
-  all->SetParLimits(9, 5., 400.);
-  all->SetParLimits(10, .1*leftmax, 1.2 * leftmax);                                                 // Non piu grande del massimo compton
+  all->SetParLimits(9, 20., 150.);
+  all->SetParLimits(10, .1*leftmax, .3 * leftmax);                                                 // Non piu grande del massimo compton
+
   all->SetParLimits(11, .9 * comptonpos1, 1.1 * comptonpos1);                          // Scala energetica del compton +o- 10%
   all->SetParLimits(12, .01, 2);  // Copiato da Gruppo 2017
   all->SetParLimits(13, 0, .25 * leftmax);                              // Finestra piu o meno ragionevole
@@ -97,10 +97,13 @@ int main(int argc, char *argv[]) {
   all->SetParameter(3, 4 / comptonpos1);          // Scala energetica doppio esponenziale come compton
   all->SetParameter(4, .3*leftmax);  // Normalizzazione da fit gaussiano precedente
   all->SetParameter(5, maxpos1);  // Media da fit gaussiano precedente
-  all->SetParameter(6, 5.);  // Sigma da fit gaussiano precedente
+
+=======
+  all->SetParameter(6, 50.);  // Sigma da fit gaussiano precedente
   all->SetParameter(7, .2*leftmax);             // Normalizzazione compton da scala minore di doppio esponenziale
   all->SetParameter(8, maxpos2);              // Scala energetica compton
-  all->SetParameter(9, 5.);    // Da Gruppo 2017
+  all->SetParameter(9, 50.);    // Da Gruppo 2017
+
   all->SetParameter(10, leftmax / 5.);             // Normalizzazione compton da scala minore di doppio esponenziale
   all->SetParameter(11, comptonpos1);              // Scala energetica compton
   all->SetParameter(12, .1);    // Da Gruppo 2017
@@ -158,44 +161,27 @@ int main(int argc, char *argv[]) {
   FDM->Draw("same");
   //FDF->Draw("same");
 
-  c1->SaveAs("control.pdf");
+
+=======
+  TGaxis *axis = new TGaxis(MIN, -100, MAX , -100, MIN , (double)MAX / 1.449, 510, "" ); //NB costanti di calibrazione canale 5 : Q = E * 1.449
+  axis->Draw("same");
+  c1->SaveAs("totalcobalto.root");
+
   #endif
 
   std::cout<<all->GetChisquare()<<std::endl;
   std::cout<<all->GetNDF()<<std::endl;
-  std::cout<<all->GetParameter(5)<<std::endl;
-  std::cout<<all->GetParError(5)<<std::endl;
 
+=======
 
-  double En[2]={1173.2,1332.5};
-  double Ca[2]={all->GetParameter(5),all->GetParameter(8)};
-  double A, B, erA, erB;
-  TCanvas* c = new TCanvas ("c","Graph Draw Options",200,10,600,400);
-  TGraph *gr = new TGraph(2, En, Ca);
-  c->SetGrid();
-  gr->SetMarkerStyle(8);
-  gr->SetMarkerSize(0.8);
-  gr->SetMarkerColor(2);
-  gr->SetTitle(Form("Linearità"));
-  gr->GetXaxis()->SetTitle("Energia [MeV]");
-  gr->GetYaxis()->SetTitle("carica [pC]");
-  TF1 *f1 = new TF1("f1","[0]*x+[1]",0,1500);
-  f1->SetLineColor(4);
-  gr->Fit(f1,"R");
-  A = f1->GetParameter(0);
-  B = f1->GetParameter(1);
-  erA = f1->GetParError(0);
-  erB = f1->GetParError(1);
-  TPaveText pvl(.1,.9,.35,.65,"brNDC");
-  pvl.AddText("y = a#upointx + b");
-  ((TText*)pvl.GetListOfLines()->Last())->SetTextColor(kBlue);
-  pvl.AddLine(.0,.78,1.,.78);
-  pvl.AddText(Form("a: %f +/- %f", A, erA));
-  pvl.AddText(Form("b: %f +/- %f", B, erB));
-  gr->Draw("AP");
-  pvl.Draw();
-  c->SaveAs(Form("plots/linearitàcobalto.pdf"));
- 
+  std::ofstream f;
+  f.open("sorgenti.dat", std::ios_base::app);
+
+  f << 1173.2 << "\t" << all->GetParameter(5) << "\t" << all->GetParError(5) << "\t" << all->GetParameter(6) << "\t" << all->GetParError(6) << std::endl;
+  f << 1332.5 << "\t" << all->GetParameter(8) << "\t" << all->GetParError(8) << "\t" << all->GetParameter(9) << "\t" << all->GetParError(9) << std::endl;
+  
+  f.close();
+  
 
   
   return 0;
